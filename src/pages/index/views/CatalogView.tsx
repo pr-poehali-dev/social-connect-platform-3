@@ -1,6 +1,6 @@
 import { Post, Review, GameInfo } from "../constants";
 import { CatalogFilters } from "./catalog/CatalogFilters";
-import { CatalogGameCard } from "./catalog/CatalogGameCard";
+import { CatalogGrid } from "./catalog/CatalogGrid";
 import { CatalogEmpty } from "./catalog/CatalogEmpty";
 
 interface CatalogViewProps {
@@ -57,28 +57,17 @@ export function CatalogView({
         resetFilters={resetFilters}
       />
 
-      {/* Сетка игр */}
       {filteredGames.length === 0 ? (
         <CatalogEmpty resetFilters={resetFilters} />
       ) : (
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredGames.map((g) => {
-            const isFollowed = followedGames.has(g.title);
-            const gamePostCount = posts.filter((p) => p.tag === g.title).length;
-            const medal = getMedal(g.title);
-            return (
-              <CatalogGameCard
-                key={g.title}
-                game={g}
-                isFollowed={isFollowed}
-                gamePostCount={gamePostCount}
-                medal={medal}
-                userScore={getGameUserScore(g.title)}
-                openGame={openGame}
-              />
-            );
-          })}
-        </div>
+        <CatalogGrid
+          posts={posts}
+          followedGames={followedGames}
+          filteredGames={filteredGames}
+          getGameUserScore={getGameUserScore}
+          getMedal={getMedal}
+          openGame={openGame}
+        />
       )}
     </div>
   );

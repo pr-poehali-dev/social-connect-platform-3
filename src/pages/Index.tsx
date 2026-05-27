@@ -143,7 +143,66 @@ const SUGGESTIONS = [
   { name: "SpeedrunQueen", handle: "speedrunq", bio: "WR × 14 · Any% маньяк" },
 ];
 
-type Tab = "feed" | "profile" | "search" | "notifications" | "messages" | "saved" | "trends";
+interface GameInfo {
+  title: string;
+  studio: string;
+  year: string;
+  genre: string;
+  rating: string;
+  players: string;
+  description: string;
+  cover: string;
+  accent: string;
+}
+
+const GAMES: Record<string, GameInfo> = {
+  "Elden Ring": {
+    title: "Elden Ring",
+    studio: "FromSoftware",
+    year: "2022",
+    genre: "Souls-like · Open World",
+    rating: "97",
+    players: "24.8M игроков",
+    description: "Открытый мир Междуземья, созданный Хидэтакой Миядзаки и Джорджем Мартином. Сражения, лор и боль — всё, что нужно.",
+    cover: "from-amber-900/40 via-zinc-900 to-rose-900/30",
+    accent: "amber",
+  },
+  "Cyberpunk 2077": {
+    title: "Cyberpunk 2077",
+    studio: "CD Projekt RED",
+    year: "2020",
+    genre: "RPG · Open World",
+    rating: "86",
+    players: "31.2M игроков",
+    description: "Найт-Сити, импланты и сюжет о памяти. После патча 2.2 — одна из лучших RPG последних лет.",
+    cover: "from-yellow-500/40 via-zinc-900 to-cyan-500/30",
+    accent: "yellow",
+  },
+  "Diablo IV": {
+    title: "Diablo IV",
+    studio: "Blizzard",
+    year: "2023",
+    genre: "ARPG · Loot",
+    rating: "82",
+    players: "12.5M игроков",
+    description: "Тёмное фэнтези, классы, бесконечный гринд легендарок и сезонные приключения в Санктуарии.",
+    cover: "from-red-900/50 via-zinc-900 to-orange-900/30",
+    accent: "red",
+  },
+  "Baldur's Gate 3": {
+    title: "Baldur's Gate 3",
+    studio: "Larian Studios",
+    year: "2023",
+    genre: "CRPG · D&D",
+    rating: "96",
+    players: "15.7M игроков",
+    description: "Лучшая RPG десятилетия. D&D 5e, нелинейный сюжет и спутники, которых вы запомните навсегда.",
+    cover: "from-emerald-900/50 via-zinc-900 to-violet-900/40",
+    accent: "emerald",
+  },
+};
+
+type Tab = "feed" | "profile" | "search" | "notifications" | "messages" | "saved" | "trends" | "game";
 
 function InitialAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name.slice(0, 2).toUpperCase();
@@ -164,11 +223,19 @@ function InitialAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   );
 }
 
-function TagBadge({ tag }: { tag: string }) {
+function TagBadge({ tag, onClick }: { tag: string; onClick?: () => void }) {
+  const isGame = !!GAMES[tag];
   return (
-    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 mb-2">
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      disabled={!isGame || !onClick}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 mb-2 ${
+        isGame && onClick ? "hover:bg-violet-500/20 hover:border-violet-500/40 cursor-pointer transition-colors" : ""
+      }`}
+    >
+      {isGame && <span className="text-[10px]">🎮</span>}
       {tag}
-    </span>
+    </button>
   );
 }
 
@@ -177,11 +244,13 @@ function PostCard({
   onLike,
   onRepost,
   onSave,
+  onTagClick,
 }: {
   post: Post;
   onLike: (id: number) => void;
   onRepost: (id: number, comment: string) => void;
   onSave: (id: number) => void;
+  onTagClick?: (tag: string) => void;
 }) {
   const [showRepostModal, setShowRepostModal] = useState(false);
   const [repostComment, setRepostComment] = useState("");
@@ -203,7 +272,7 @@ function PostCard({
             <span className="text-zinc-600 text-xs ml-auto flex-shrink-0">{post.time}</span>
           </div>
 
-          {post.tag && <TagBadge tag={post.tag} />}
+          {post.tag && <TagBadge tag={post.tag} onClick={onTagClick ? () => onTagClick(post.tag!) : undefined} />}
 
           {post.repostOf && (
             <div className="border border-white/8 rounded-xl p-3 mb-3 bg-white/[0.03]">
@@ -314,6 +383,23 @@ export default function Index() {
   const [newPostText, setNewPostText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [followedGames, setFollowedGames] = useState<Set<string>>(new Set());
+
+  const openGame = (tag: string) => {
+    if (GAMES[tag]) {
+      setSelectedGame(tag);
+      setActiveTab("game");
+    }
+  };
+
+  const toggleFollowGame = (tag: string) => {
+    setFollowedGames((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag); else next.add(tag);
+      return next;
+    });
+  };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -487,7 +573,7 @@ export default function Index() {
               </div>
 
               {posts.map((post) => (
-                <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} />
+                <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
               ))}
             </div>
           )}
@@ -522,7 +608,7 @@ export default function Index() {
                     </div>
                   ) : (
                     filteredPosts.map((post) => (
-                      <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} />
+                      <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
                     ))
                   )}
                 </div>
@@ -645,7 +731,7 @@ export default function Index() {
                 </div>
               ) : (
                 savedPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} />
+                  <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
                 ))
               )}
             </div>
@@ -726,17 +812,133 @@ export default function Index() {
                     <p className="text-sm text-zinc-600">Вы ещё ничего не публиковали</p>
                   ) : (
                     posts.filter((p) => p.handle === "you").map((post) => (
-                      <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} />
+                      <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
                     ))
                   )}
                 </div>
               </div>
             </div>
           )}
+
+          {/* Страница игры */}
+          {activeTab === "game" && selectedGame && GAMES[selectedGame] && (() => {
+            const game = GAMES[selectedGame];
+            const gamePosts = posts.filter((p) => p.tag === selectedGame);
+            const isFollowed = followedGames.has(selectedGame);
+            return (
+              <div>
+                <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                  <button
+                    onClick={() => setActiveTab("feed")}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <Icon name="ArrowLeft" size={18} />
+                  </button>
+                  <div>
+                    <h1 className="font-semibold text-white">{game.title}</h1>
+                    <p className="text-xs text-zinc-500">{gamePosts.length} постов</p>
+                  </div>
+                </div>
+
+                {/* Обложка */}
+                <div className={`h-44 bg-gradient-to-br ${game.cover} relative overflow-hidden`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.05),transparent_50%)]" />
+                  <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-zinc-300/70 mb-1">{game.genre}</div>
+                      <h2 className="text-3xl font-bold text-white tracking-tight">{game.title}</h2>
+                      <p className="text-sm text-zinc-300/80 mt-1">{game.studio} · {game.year}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 border-b border-white/5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex gap-6">
+                      <div>
+                        <div className="text-2xl font-bold text-white">{game.rating}<span className="text-sm text-zinc-500">/100</span></div>
+                        <div className="text-xs text-zinc-500 mt-0.5">Metacritic</div>
+                      </div>
+                      <div className="border-l border-white/10 pl-6">
+                        <div className="text-2xl font-bold text-white">{gamePosts.length}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">постов</div>
+                      </div>
+                      <div className="border-l border-white/10 pl-6">
+                        <div className="text-2xl font-bold text-white">{game.players.split(" ")[0]}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">игроков</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleFollowGame(selectedGame)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isFollowed
+                          ? "bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10"
+                          : "bg-violet-600 text-white hover:bg-violet-500"
+                      }`}
+                    >
+                      {isFollowed ? "Отслеживается" : "Отслеживать"}
+                    </button>
+                  </div>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{game.description}</p>
+                </div>
+
+                {/* Табы внутри игры */}
+                <div className="flex border-b border-white/5 px-6">
+                  <button className="px-4 py-3 text-sm font-medium text-white border-b-2 border-violet-500">
+                    Все посты
+                  </button>
+                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
+                    Гайды
+                  </button>
+                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
+                    Скриншоты
+                  </button>
+                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
+                    Стримы
+                  </button>
+                </div>
+
+                {gamePosts.length === 0 ? (
+                  <div className="px-6 py-16 text-center">
+                    <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Icon name="Gamepad2" size={28} className="text-zinc-500" />
+                    </div>
+                    <h2 className="font-medium text-white mb-1">Пока тихо</h2>
+                    <p className="text-sm text-zinc-500">Будь первым, кто напишет про {game.title}</p>
+                  </div>
+                ) : (
+                  gamePosts.map((post) => (
+                    <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
+                  ))
+                )}
+              </div>
+            );
+          })()}
         </main>
 
         {/* Правая панель */}
         <aside className="w-72 flex-shrink-0 pl-6 pt-6 pr-4 hidden lg:block">
+          <div className="mb-7">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">Игры в фокусе</h2>
+            <div className="space-y-2">
+              {Object.values(GAMES).slice(0, 3).map((g) => (
+                <button
+                  key={g.title}
+                  onClick={() => openGame(g.title)}
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-left transition-colors group"
+                >
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${g.cover} flex-shrink-0 flex items-center justify-center text-xs font-bold text-white/80`}>
+                    {g.title.slice(0, 1)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white truncate group-hover:text-violet-300 transition-colors">{g.title}</div>
+                    <div className="text-xs text-zinc-500 truncate">{g.rating}/100 · {g.genre.split(" · ")[0]}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="mb-7">
             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">В тренде сейчас</h2>
             <div className="space-y-0.5">

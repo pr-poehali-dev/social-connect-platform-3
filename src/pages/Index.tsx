@@ -525,6 +525,25 @@ export default function Index() {
     setCatalogSearch("");
   };
 
+  const topUserScoreGames = Object.values(GAMES)
+    .map((g) => {
+      const list = reviews.filter((r) => r.game === g.title);
+      const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
+      return { title: g.title, avg, count: list.length };
+    })
+    .filter((g) => g.count > 0)
+    .sort((a, b) => (b.avg !== a.avg ? b.avg - a.avg : b.count - a.count))
+    .slice(0, 3)
+    .map((g) => g.title);
+
+  const getMedal = (title: string): { emoji: string; label: string; color: string } | null => {
+    const idx = topUserScoreGames.indexOf(title);
+    if (idx === 0) return { emoji: "🥇", label: "#1 по оценкам", color: "from-amber-500/90 to-yellow-600/90 border-amber-400/50" };
+    if (idx === 1) return { emoji: "🥈", label: "#2 по оценкам", color: "from-zinc-300/90 to-zinc-500/90 border-zinc-300/50" };
+    if (idx === 2) return { emoji: "🥉", label: "#3 по оценкам", color: "from-orange-600/90 to-amber-800/90 border-orange-500/50" };
+    return null;
+  };
+
   const filteredGames = Object.values(GAMES)
     .filter((g) => {
       if (catalogSearch && !g.title.toLowerCase().includes(catalogSearch.toLowerCase()) && !g.studio.toLowerCase().includes(catalogSearch.toLowerCase())) return false;
@@ -1093,20 +1112,36 @@ export default function Index() {
                   {filteredGames.map((g) => {
                     const isFollowed = followedGames.has(g.title);
                     const gamePostCount = posts.filter((p) => p.tag === g.title).length;
+                    const medal = getMedal(g.title);
                     return (
                       <button
                         key={g.title}
                         onClick={() => openGame(g.title)}
-                        className="group text-left bg-white/[0.02] border border-white/8 rounded-2xl overflow-hidden hover:border-violet-500/40 hover:bg-white/[0.04] transition-all"
+                        className={`group text-left bg-white/[0.02] border rounded-2xl overflow-hidden transition-all relative ${
+                          medal
+                            ? "border-amber-500/30 hover:border-amber-400/60 hover:bg-white/[0.04] shadow-[0_0_24px_-12px_rgba(245,158,11,0.35)]"
+                            : "border-white/8 hover:border-violet-500/40 hover:bg-white/[0.04]"
+                        }`}
                       >
                         <div className={`h-32 bg-gradient-to-br ${g.cover} relative overflow-hidden`}>
                           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.06),transparent_50%)]" />
                           <div className="absolute top-3 right-3 px-2 py-0.5 bg-black/40 backdrop-blur-sm rounded-md text-xs font-bold text-white border border-white/10">
                             {g.rating}
                           </div>
-                          {isFollowed && (
+                          {medal && (
+                            <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r ${medal.color} backdrop-blur-sm rounded-md text-[10px] font-bold text-white border shadow-lg`}>
+                              <span className="text-sm leading-none">{medal.emoji}</span>
+                              <span>{medal.label}</span>
+                            </div>
+                          )}
+                          {isFollowed && !medal && (
                             <div className="absolute top-3 left-3 px-2 py-0.5 bg-violet-600/90 backdrop-blur-sm rounded-md text-[10px] font-medium text-white">
                               Отслеживается
+                            </div>
+                          )}
+                          {isFollowed && medal && (
+                            <div className="absolute bottom-3 right-3 w-5 h-5 bg-violet-600/90 backdrop-blur-sm rounded-md flex items-center justify-center">
+                              <Icon name="Check" size={12} className="text-white" />
                             </div>
                           )}
                           <div className="absolute bottom-3 left-3 right-3">

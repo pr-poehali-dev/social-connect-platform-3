@@ -1,7 +1,8 @@
-import { Post, Review, Tab, PostCard } from "../constants";
+import { Post, Review, Tab } from "../constants";
 import { FeedHeader } from "./feed/FeedHeader";
 import { NewPostComposer } from "./feed/NewPostComposer";
 import { HallOfFame } from "./feed/HallOfFame";
+import { PostsList } from "./feed/PostsList";
 
 interface FeedViewProps {
   setActiveTab: (t: Tab) => void;
@@ -53,9 +54,13 @@ export function FeedView({
         openGame={openGame}
       />
 
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
-      ))}
+      <PostsList
+        posts={posts}
+        openGame={openGame}
+        handleLike={handleLike}
+        handleRepost={handleRepost}
+        handleSave={handleSave}
+      />
     </div>
   );
 }

@@ -473,7 +473,7 @@ export default function Index() {
   const [followedGames, setFollowedGames] = useState<Set<string>>(new Set());
   const [catalogGenres, setCatalogGenres] = useState<Set<string>>(new Set());
   const [catalogPlatforms, setCatalogPlatforms] = useState<Set<string>>(new Set());
-  const [catalogSort, setCatalogSort] = useState<"rating" | "year" | "players">("rating");
+  const [catalogSort, setCatalogSort] = useState<"rating" | "userScore" | "year" | "players">("userScore");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [reviewRating, setReviewRating] = useState(0);
@@ -535,6 +535,14 @@ export default function Index() {
     .sort((a, b) => {
       if (catalogSort === "rating") return parseInt(b.rating) - parseInt(a.rating);
       if (catalogSort === "year") return parseInt(b.year) - parseInt(a.year);
+      if (catalogSort === "userScore") {
+        const scoreA = reviews.filter((r) => r.game === a.title);
+        const scoreB = reviews.filter((r) => r.game === b.title);
+        const avgA = scoreA.length ? scoreA.reduce((s, r) => s + r.rating, 0) / scoreA.length : 0;
+        const avgB = scoreB.length ? scoreB.reduce((s, r) => s + r.rating, 0) / scoreB.length : 0;
+        if (avgB !== avgA) return avgB - avgA;
+        return scoreB.length - scoreA.length;
+      }
       const num = (s: string) => parseFloat(s.replace(/[^\d.]/g, ""));
       return num(b.players) - num(a.players);
     });
@@ -986,12 +994,13 @@ export default function Index() {
                   <div className="flex items-center gap-2">
                     <select
                       value={catalogSort}
-                      onChange={(e) => setCatalogSort(e.target.value as "rating" | "year" | "players")}
+                      onChange={(e) => setCatalogSort(e.target.value as "rating" | "userScore" | "year" | "players")}
                       className="bg-white/5 border border-white/10 rounded-lg text-sm text-zinc-300 px-3 py-1.5 focus:outline-none focus:border-violet-500/50 cursor-pointer"
                     >
-                      <option value="rating">По рейтингу</option>
-                      <option value="year">По году</option>
-                      <option value="players">По игрокам</option>
+                      <option value="userScore">★ Топ по оценкам игроков</option>
+                      <option value="rating">По рейтингу Metacritic</option>
+                      <option value="year">По году выхода</option>
+                      <option value="players">По числу игроков</option>
                     </select>
                   </div>
                 </div>

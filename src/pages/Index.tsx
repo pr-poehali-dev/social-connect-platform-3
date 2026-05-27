@@ -442,6 +442,27 @@ function PostCard({
   );
 }
 
+interface Review {
+  id: number;
+  game: string;
+  author: string;
+  rating: number;
+  text: string;
+  time: string;
+  likes: number;
+  liked?: boolean;
+}
+
+const INITIAL_REVIEWS: Review[] = [
+  { id: 1, game: "Elden Ring", author: "NightOwl_GG", rating: 10, text: "Шедевр. Каждый угол карты создан вручную — это видно. Бои сложные, но честные. Просто 10 из 10.", time: "2 дня назад", likes: 248 },
+  { id: 2, game: "Elden Ring", author: "PixelViper", rating: 9, text: "Боссы — это искусство. Но иногда баланс хромает: Маления слишком сильна по сравнению с остальными.", time: "5 дней назад", likes: 87 },
+  { id: 3, game: "Baldur's Gate 3", author: "LootGoblin", rating: 10, text: "180 часов — и ни секунды не пожалел. Larian создали новый стандарт для RPG.", time: "1 день назад", likes: 312 },
+  { id: 4, game: "Cyberpunk 2077", author: "GlitchHunter", rating: 8, text: "После всех патчей — отличная игра. Если бы такой релиз был в 2020, это была бы GOTY.", time: "3 дня назад", likes: 156 },
+  { id: 5, game: "Hollow Knight", author: "RetroFrame", rating: 10, text: "Идеальная метроидвания. Атмосфера, музыка, дизайн уровней — всё на высочайшем уровне.", time: "неделю назад", likes: 421 },
+  { id: 6, game: "Hades", author: "SpeedrunQueen", rating: 9, text: "Лучший рогалик. Сюжет, который раскрывается через геймплей — это гениально.", time: "4 дня назад", likes: 198 },
+  { id: 7, game: "Stardew Valley", author: "RetroFrame", rating: 9, text: "Один человек сделал лучший симулятор фермы. Терапевтическая игра.", time: "2 недели назад", likes: 134 },
+];
+
 export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>("feed");
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
@@ -454,6 +475,43 @@ export default function Index() {
   const [catalogPlatforms, setCatalogPlatforms] = useState<Set<string>>(new Set());
   const [catalogSort, setCatalogSort] = useState<"rating" | "year" | "players">("rating");
   const [catalogSearch, setCatalogSearch] = useState("");
+  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [gameSubTab, setGameSubTab] = useState<"posts" | "reviews">("posts");
+
+  const getGameReviews = (game: string) => reviews.filter((r) => r.game === game);
+  const getGameUserScore = (game: string) => {
+    const list = getGameReviews(game);
+    if (list.length === 0) return null;
+    return (list.reduce((a, r) => a + r.rating, 0) / list.length).toFixed(1);
+  };
+
+  const submitReview = (game: string) => {
+    if (reviewRating === 0 || !reviewText.trim()) return;
+    const newReview: Review = {
+      id: Date.now(),
+      game,
+      author: "Вы",
+      rating: reviewRating,
+      text: reviewText.trim(),
+      time: "только что",
+      likes: 0,
+    };
+    setReviews((prev) => [newReview, ...prev]);
+    setReviewRating(0);
+    setReviewText("");
+    setReviewHover(0);
+  };
+
+  const likeReview = (id: number) => {
+    setReviews((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, liked: !r.liked, likes: r.liked ? r.likes - 1 : r.likes + 1 } : r
+      )
+    );
+  };
 
   const toggleSetItem = (set: Set<string>, item: string, setter: (s: Set<string>) => void) => {
     const next = new Set(set);
@@ -1060,6 +1118,12 @@ export default function Index() {
                           <p className="text-xs text-zinc-400 leading-relaxed mb-3 line-clamp-2">{g.description}</p>
                           <div className="flex items-center justify-between text-xs text-zinc-500">
                             <div className="flex items-center gap-3">
+                              {getGameUserScore(g.title) && (
+                                <span className="flex items-center gap-1 text-amber-400">
+                                  <Icon name="Star" size={11} className="fill-current" />
+                                  {getGameUserScore(g.title)}
+                                </span>
+                              )}
                               <span className="flex items-center gap-1">
                                 <Icon name="Users" size={11} />
                                 {g.players.split(" ")[0]}
@@ -1126,12 +1190,15 @@ export default function Index() {
                         <div className="text-xs text-zinc-500 mt-0.5">Metacritic</div>
                       </div>
                       <div className="border-l border-white/10 pl-6">
-                        <div className="text-2xl font-bold text-white">{gamePosts.length}</div>
-                        <div className="text-xs text-zinc-500 mt-0.5">постов</div>
+                        <div className="text-2xl font-bold text-amber-400 flex items-center gap-1">
+                          {getGameUserScore(selectedGame) || "—"}
+                          {getGameUserScore(selectedGame) && <Icon name="Star" size={16} className="fill-current" />}
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-0.5">Оценка игроков · {getGameReviews(selectedGame).length}</div>
                       </div>
                       <div className="border-l border-white/10 pl-6">
-                        <div className="text-2xl font-bold text-white">{game.players.split(" ")[0]}</div>
-                        <div className="text-xs text-zinc-500 mt-0.5">игроков</div>
+                        <div className="text-2xl font-bold text-white">{gamePosts.length}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">постов</div>
                       </div>
                     </div>
                     <button
@@ -1150,32 +1217,153 @@ export default function Index() {
 
                 {/* Табы внутри игры */}
                 <div className="flex border-b border-white/5 px-6">
-                  <button className="px-4 py-3 text-sm font-medium text-white border-b-2 border-violet-500">
-                    Все посты
+                  <button
+                    onClick={() => setGameSubTab("posts")}
+                    className={`px-4 py-3 text-sm font-medium transition-colors ${
+                      gameSubTab === "posts" ? "text-white border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    Посты <span className="text-zinc-600 ml-1">{gamePosts.length}</span>
                   </button>
-                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
-                    Гайды
-                  </button>
-                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
-                    Скриншоты
-                  </button>
-                  <button className="px-4 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">
-                    Стримы
+                  <button
+                    onClick={() => setGameSubTab("reviews")}
+                    className={`px-4 py-3 text-sm font-medium transition-colors ${
+                      gameSubTab === "reviews" ? "text-white border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    Отзывы <span className="text-zinc-600 ml-1">{getGameReviews(selectedGame).length}</span>
                   </button>
                 </div>
 
-                {gamePosts.length === 0 ? (
-                  <div className="px-6 py-16 text-center">
-                    <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Icon name="Gamepad2" size={28} className="text-zinc-500" />
+                {gameSubTab === "posts" && (
+                  gamePosts.length === 0 ? (
+                    <div className="px-6 py-16 text-center">
+                      <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Icon name="Gamepad2" size={28} className="text-zinc-500" />
+                      </div>
+                      <h2 className="font-medium text-white mb-1">Пока тихо</h2>
+                      <p className="text-sm text-zinc-500">Будь первым, кто напишет про {game.title}</p>
                     </div>
-                    <h2 className="font-medium text-white mb-1">Пока тихо</h2>
-                    <p className="text-sm text-zinc-500">Будь первым, кто напишет про {game.title}</p>
+                  ) : (
+                    gamePosts.map((post) => (
+                      <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
+                    ))
+                  )
+                )}
+
+                {gameSubTab === "reviews" && (
+                  <div>
+                    {/* Форма отзыва */}
+                    <div className="px-6 py-5 border-b border-white/5 bg-white/[0.02]">
+                      <h3 className="text-sm font-semibold text-white mb-3">Оцените игру</h3>
+                      <div className="flex items-center gap-1 mb-3">
+                        {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                          <button
+                            key={n}
+                            onMouseEnter={() => setReviewHover(n)}
+                            onMouseLeave={() => setReviewHover(0)}
+                            onClick={() => setReviewRating(n)}
+                            className="transition-transform hover:scale-110"
+                          >
+                            <Icon
+                              name="Star"
+                              size={22}
+                              className={
+                                n <= (reviewHover || reviewRating)
+                                  ? "text-amber-400 fill-current"
+                                  : "text-zinc-700"
+                              }
+                            />
+                          </button>
+                        ))}
+                        {(reviewHover || reviewRating) > 0 && (
+                          <span className="ml-3 text-sm font-bold text-amber-400">{reviewHover || reviewRating}/10</span>
+                        )}
+                      </div>
+                      <Textarea
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        placeholder={`Расскажите, что думаете о ${game.title}…`}
+                        className="resize-none bg-white/5 border-white/10 text-zinc-200 placeholder:text-zinc-600 focus:border-violet-500/50 mb-3 text-sm"
+                        rows={3}
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => submitReview(selectedGame)}
+                          disabled={reviewRating === 0 || !reviewText.trim()}
+                          className="px-4 py-1.5 bg-violet-600 text-white text-sm rounded-lg disabled:opacity-30 hover:bg-violet-500 transition-colors font-medium"
+                        >
+                          Опубликовать отзыв
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Список отзывов */}
+                    {getGameReviews(selectedGame).length === 0 ? (
+                      <div className="px-6 py-16 text-center">
+                        <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <Icon name="Star" size={28} className="text-zinc-500" />
+                        </div>
+                        <h2 className="font-medium text-white mb-1">Пока без отзывов</h2>
+                        <p className="text-sm text-zinc-500">Будьте первым, кто оценит {game.title}</p>
+                      </div>
+                    ) : (
+                      getGameReviews(selectedGame).map((r) => (
+                        <article key={r.id} className="px-6 py-5 border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <div className="flex gap-4">
+                            <InitialAvatar name={r.author} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline gap-2 mb-1.5">
+                                <span className="font-semibold text-white text-sm">{r.author}</span>
+                                <span className="text-zinc-600 text-xs">·</span>
+                                <span className="text-zinc-500 text-xs">{r.time}</span>
+                                <div className="ml-auto flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-0.5">
+                                  <Icon name="Star" size={11} className="text-amber-400 fill-current" />
+                                  <span className="text-amber-400 text-xs font-bold">{r.rating}/10</span>
+                                </div>
+                              </div>
+
+                              {/* Полоска оценки */}
+                              <div className="flex items-center gap-1 mb-3">
+                                {Array.from({ length: 10 }).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`h-1 flex-1 rounded-full ${
+                                      i < r.rating
+                                        ? r.rating >= 8
+                                          ? "bg-emerald-500"
+                                          : r.rating >= 5
+                                            ? "bg-amber-500"
+                                            : "bg-rose-500"
+                                        : "bg-white/8"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+
+                              <p className="text-zinc-200 text-sm leading-relaxed mb-3">{r.text}</p>
+
+                              <div className="flex items-center gap-5">
+                                <button
+                                  onClick={() => likeReview(r.id)}
+                                  className={`flex items-center gap-1.5 text-xs transition-colors ${
+                                    r.liked ? "text-rose-400" : "text-zinc-500 hover:text-rose-400"
+                                  }`}
+                                >
+                                  <Icon name="Heart" size={14} className={r.liked ? "fill-current" : ""} />
+                                  <span>{r.likes}</span>
+                                </button>
+                                <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-cyan-400 transition-colors">
+                                  <Icon name="MessageCircle" size={14} />
+                                  <span>Ответить</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    )}
                   </div>
-                ) : (
-                  gamePosts.map((post) => (
-                    <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} onTagClick={openGame} />
-                  ))
                 )}
               </div>
             );

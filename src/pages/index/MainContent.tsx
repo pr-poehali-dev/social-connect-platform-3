@@ -1,4 +1,4 @@
-import { Post, Notification, Review, Tab, GAMES, GameInfo } from "./constants";
+import { Tab, GAMES } from "./constants";
 import { FeedView } from "./views/FeedView";
 import {
   SearchView,
@@ -10,105 +10,40 @@ import {
 } from "./views/SecondaryViews";
 import { CatalogView } from "./views/CatalogView";
 import { GameView } from "./views/GameView";
+import { usePosts } from "./hooks/usePosts";
+import { useReviews } from "./hooks/useReviews";
+import { useCatalog } from "./hooks/useCatalog";
+import { useGameNavigation } from "./hooks/useGameNavigation";
+import { useNotifications } from "./hooks/useNotifications";
 
 interface MainContentProps {
   activeTab: Tab;
   setActiveTab: (t: Tab) => void;
-  posts: Post[];
-  filteredPosts: Post[];
-  savedPosts: Post[];
-  newPostText: string;
-  setNewPostText: (v: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
-  notifications: Notification[];
-  unreadCount: number;
-  selectedGame: string | null;
-  followedGames: Set<string>;
-  catalogGenres: Set<string>;
-  setCatalogGenres: (s: Set<string>) => void;
-  catalogPlatforms: Set<string>;
-  setCatalogPlatforms: (s: Set<string>) => void;
-  catalogSort: "rating" | "userScore" | "year" | "players";
-  setCatalogSort: (s: "rating" | "userScore" | "year" | "players") => void;
-  catalogSearch: string;
-  setCatalogSearch: (v: string) => void;
-  reviews: Review[];
-  reviewRating: number;
-  setReviewRating: (n: number) => void;
-  reviewHover: number;
-  setReviewHover: (n: number) => void;
-  reviewText: string;
-  setReviewText: (v: string) => void;
-  gameSubTab: "posts" | "reviews";
-  setGameSubTab: (t: "posts" | "reviews") => void;
-  filteredGames: GameInfo[];
-  getGameUserScore: (game: string) => string | null;
-  getGameReviews: (game: string) => Review[];
-  topUserScoreGames: string[];
-  getMedal: (title: string) => { emoji: string; label: string; color: string } | null;
-  openGame: (tag: string) => void;
-  toggleFollowGame: (tag: string) => void;
-  toggleSetItem: (set: Set<string>, item: string, setter: (s: Set<string>) => void) => void;
-  resetFilters: () => void;
-  handleLike: (id: number) => void;
-  handleRepost: (id: number, comment: string) => void;
-  handleSave: (id: number) => void;
-  handlePublish: () => void;
-  markAllRead: () => void;
-  submitReview: (game: string) => void;
-  likeReview: (id: number) => void;
+  postsBundle: ReturnType<typeof usePosts>;
+  reviewsBundle: ReturnType<typeof useReviews>;
+  catalogBundle: ReturnType<typeof useCatalog>;
+  navigationBundle: ReturnType<typeof useGameNavigation>;
+  notificationsBundle: ReturnType<typeof useNotifications>;
 }
 
-export function MainContent(props: MainContentProps) {
-  const {
-    activeTab,
-    setActiveTab,
-    posts,
-    filteredPosts,
-    savedPosts,
-    newPostText,
-    setNewPostText,
-    searchQuery,
-    setSearchQuery,
-    notifications,
-    unreadCount,
-    selectedGame,
-    followedGames,
-    catalogGenres,
-    setCatalogGenres,
-    catalogPlatforms,
-    setCatalogPlatforms,
-    catalogSort,
-    setCatalogSort,
-    catalogSearch,
-    setCatalogSearch,
-    reviews,
-    reviewRating,
-    setReviewRating,
-    reviewHover,
-    setReviewHover,
-    reviewText,
-    setReviewText,
-    gameSubTab,
-    setGameSubTab,
-    filteredGames,
-    getGameUserScore,
-    getGameReviews,
-    topUserScoreGames,
-    getMedal,
-    openGame,
-    toggleFollowGame,
-    toggleSetItem,
-    resetFilters,
-    handleLike,
-    handleRepost,
-    handleSave,
-    handlePublish,
-    markAllRead,
-    submitReview,
-    likeReview,
-  } = props;
+export function MainContent({
+  activeTab,
+  setActiveTab,
+  searchQuery,
+  setSearchQuery,
+  postsBundle,
+  reviewsBundle,
+  catalogBundle,
+  navigationBundle,
+  notificationsBundle,
+}: MainContentProps) {
+  const { posts, filteredPosts, savedPosts, newPostText, setNewPostText, handleLike, handleRepost, handleSave, handlePublish } = postsBundle;
+  const { reviews, reviewRating, setReviewRating, reviewHover, setReviewHover, reviewText, setReviewText, getGameReviews, getGameUserScore, topUserScoreGames, getMedal, submitReview, likeReview } = reviewsBundle;
+  const { catalogGenres, setCatalogGenres, catalogPlatforms, setCatalogPlatforms, catalogSort, setCatalogSort, catalogSearch, setCatalogSearch, filteredGames, toggleSetItem, resetFilters } = catalogBundle;
+  const { selectedGame, followedGames, gameSubTab, setGameSubTab, openGame, toggleFollowGame } = navigationBundle;
+  const { notifications, unreadCount, markAllRead } = notificationsBundle;
 
   return (
     <main className="flex-1 min-w-0 border-r border-white/5">

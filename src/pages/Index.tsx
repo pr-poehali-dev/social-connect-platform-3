@@ -20,11 +20,13 @@ interface Post {
 
 interface Notification {
   id: number;
-  type: "like" | "comment" | "follow" | "repost";
+  type: "like" | "comment" | "follow" | "repost" | "achievement";
   user: string;
   text: string;
   time: string;
   read: boolean;
+  medal?: "🥇" | "🥈" | "🥉";
+  game?: string;
 }
 
 const INITIAL_POSTS: Post[] = [
@@ -488,6 +490,19 @@ export default function Index() {
     return (list.reduce((a, r) => a + r.rating, 0) / list.length).toFixed(1);
   };
 
+  const computeTop3 = (list: Review[]): string[] => {
+    return Object.values(GAMES)
+      .map((g) => {
+        const arr = list.filter((r) => r.game === g.title);
+        const avg = arr.length ? arr.reduce((s, r) => s + r.rating, 0) / arr.length : 0;
+        return { title: g.title, avg, count: arr.length };
+      })
+      .filter((g) => g.count > 0)
+      .sort((a, b) => (b.avg !== a.avg ? b.avg - a.avg : b.count - a.count))
+      .slice(0, 3)
+      .map((g) => g.title);
+  };
+
   const submitReview = (game: string) => {
     if (reviewRating === 0 || !reviewText.trim()) return;
     const newReview: Review = {
@@ -499,10 +514,37 @@ export default function Index() {
       time: "только что",
       likes: 0,
     };
+
+    const before = computeTop3(reviews);
+    const after = computeTop3([newReview, ...reviews]);
+
     setReviews((prev) => [newReview, ...prev]);
     setReviewRating(0);
     setReviewText("");
     setReviewHover(0);
+
+    const beforeIdx = before.indexOf(game);
+    const afterIdx = after.indexOf(game);
+
+    if (afterIdx !== -1 && (beforeIdx === -1 || afterIdx < beforeIdx)) {
+      const medals: Array<"🥇" | "🥈" | "🥉"> = ["🥇", "🥈", "🥉"];
+      const place = afterIdx + 1;
+      const text =
+        beforeIdx === -1
+          ? `Ваш отзыв вывел «${game}» в зал славы — ${place}-е место по оценкам игроков!`
+          : `Ваш отзыв поднял «${game}» на ${place}-е место в зале славы!`;
+      const newNotif: Notification = {
+        id: Date.now() + 1,
+        type: "achievement",
+        user: "Зал славы",
+        text,
+        time: "только что",
+        read: false,
+        medal: medals[afterIdx],
+        game,
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+    }
   };
 
   const likeReview = (id: number) => {
@@ -903,30 +945,41 @@ export default function Index() {
               {notifications.map((n) => (
                 <div
                   key={n.id}
+                  onClick={() => n.game && openGame(n.game)}
                   className={`flex items-start gap-4 px-6 py-4 border-b border-white/5 transition-colors ${
-                    !n.read ? "bg-violet-500/5" : "hover:bg-white/[0.02]"
+                    n.type === "achievement"
+                      ? "bg-gradient-to-r from-amber-500/10 to-transparent border-l-2 border-l-amber-500/60 cursor-pointer hover:from-amber-500/15"
+                      : !n.read
+                        ? "bg-violet-500/5"
+                        : "hover:bg-white/[0.02]"
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    n.type === "like" ? "bg-rose-500/15 text-rose-400" :
-                    n.type === "comment" ? "bg-cyan-500/15 text-cyan-400" :
-                    n.type === "follow" ? "bg-emerald-500/15 text-emerald-400" :
-                    "bg-amber-500/15 text-amber-400"
-                  }`}>
-                    <Icon
-                      name={n.type === "like" ? "Heart" : n.type === "comment" ? "MessageCircle" : n.type === "follow" ? "UserPlus" : "Repeat2"}
-                      size={14}
-                    />
-                  </div>
+                  {n.type === "achievement" ? (
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30 text-lg leading-none">
+                      {n.medal}
+                    </div>
+                  ) : (
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      n.type === "like" ? "bg-rose-500/15 text-rose-400" :
+                      n.type === "comment" ? "bg-cyan-500/15 text-cyan-400" :
+                      n.type === "follow" ? "bg-emerald-500/15 text-emerald-400" :
+                      "bg-amber-500/15 text-amber-400"
+                    }`}>
+                      <Icon
+                        name={n.type === "like" ? "Heart" : n.type === "comment" ? "MessageCircle" : n.type === "follow" ? "UserPlus" : "Repeat2"}
+                        size={14}
+                      />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-zinc-200">
-                      <span className="font-medium text-white">{n.user}</span>{" "}
-                      <span className="text-zinc-400">{n.text}</span>
+                      <span className={`font-medium ${n.type === "achievement" ? "text-amber-300" : "text-white"}`}>{n.user}</span>{" "}
+                      <span className="text-zinc-300">{n.text}</span>
                     </p>
                     <span className="text-xs text-zinc-600">{n.time}</span>
                   </div>
                   {!n.read && (
-                    <div className="w-2 h-2 bg-violet-400 rounded-full flex-shrink-0 mt-2" />
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-2 ${n.type === "achievement" ? "bg-amber-400" : "bg-violet-400"}`} />
                   )}
                 </div>
               ))}

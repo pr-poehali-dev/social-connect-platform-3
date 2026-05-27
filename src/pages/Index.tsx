@@ -148,6 +148,8 @@ interface GameInfo {
   studio: string;
   year: string;
   genre: string;
+  genres: string[];
+  platforms: string[];
   rating: string;
   players: string;
   description: string;
@@ -161,6 +163,8 @@ const GAMES: Record<string, GameInfo> = {
     studio: "FromSoftware",
     year: "2022",
     genre: "Souls-like · Open World",
+    genres: ["RPG", "Open World"],
+    platforms: ["PC", "PS5", "Xbox"],
     rating: "97",
     players: "24.8M игроков",
     description: "Открытый мир Междуземья, созданный Хидэтакой Миядзаки и Джорджем Мартином. Сражения, лор и боль — всё, что нужно.",
@@ -172,6 +176,8 @@ const GAMES: Record<string, GameInfo> = {
     studio: "CD Projekt RED",
     year: "2020",
     genre: "RPG · Open World",
+    genres: ["RPG", "Open World", "Shooter"],
+    platforms: ["PC", "PS5", "Xbox"],
     rating: "86",
     players: "31.2M игроков",
     description: "Найт-Сити, импланты и сюжет о памяти. После патча 2.2 — одна из лучших RPG последних лет.",
@@ -183,6 +189,8 @@ const GAMES: Record<string, GameInfo> = {
     studio: "Blizzard",
     year: "2023",
     genre: "ARPG · Loot",
+    genres: ["RPG", "Action"],
+    platforms: ["PC", "PS5", "Xbox"],
     rating: "82",
     players: "12.5M игроков",
     description: "Тёмное фэнтези, классы, бесконечный гринд легендарок и сезонные приключения в Санктуарии.",
@@ -194,15 +202,72 @@ const GAMES: Record<string, GameInfo> = {
     studio: "Larian Studios",
     year: "2023",
     genre: "CRPG · D&D",
+    genres: ["RPG", "Стратегия"],
+    platforms: ["PC", "PS5", "Mac"],
     rating: "96",
     players: "15.7M игроков",
     description: "Лучшая RPG десятилетия. D&D 5e, нелинейный сюжет и спутники, которых вы запомните навсегда.",
     cover: "from-emerald-900/50 via-zinc-900 to-violet-900/40",
     accent: "emerald",
   },
+  "Hollow Knight": {
+    title: "Hollow Knight",
+    studio: "Team Cherry",
+    year: "2017",
+    genre: "Metroidvania · Инди",
+    genres: ["Инди", "Action"],
+    platforms: ["PC", "PS5", "Switch", "Xbox"],
+    rating: "90",
+    players: "5.8M игроков",
+    description: "Атмосферная метроидвания о падшем королевстве жуков. Сложно, красиво, до слёз.",
+    cover: "from-slate-700/50 via-zinc-900 to-cyan-900/30",
+    accent: "slate",
+  },
+  "Stardew Valley": {
+    title: "Stardew Valley",
+    studio: "ConcernedApe",
+    year: "2016",
+    genre: "Симулятор · Инди",
+    genres: ["Инди", "Симулятор"],
+    platforms: ["PC", "PS5", "Switch", "Mobile"],
+    rating: "89",
+    players: "30.0M игроков",
+    description: "Спокойная ферма, рыбалка, отношения и шахты. Один человек сделал лучший симулятор фермы.",
+    cover: "from-lime-700/40 via-zinc-900 to-amber-700/30",
+    accent: "lime",
+  },
+  "The Witcher 3": {
+    title: "The Witcher 3",
+    studio: "CD Projekt RED",
+    year: "2015",
+    genre: "RPG · Open World",
+    genres: ["RPG", "Open World"],
+    platforms: ["PC", "PS5", "Xbox", "Switch"],
+    rating: "93",
+    players: "50.0M игроков",
+    description: "Геральт, Цири и Дикая Охота. Эталон сюжетной RPG с открытым миром.",
+    cover: "from-zinc-700/50 via-zinc-900 to-red-900/30",
+    accent: "zinc",
+  },
+  "Hades": {
+    title: "Hades",
+    studio: "Supergiant Games",
+    year: "2020",
+    genre: "Roguelike · Инди",
+    genres: ["Инди", "Action"],
+    platforms: ["PC", "PS5", "Switch", "Xbox"],
+    rating: "93",
+    players: "4.5M игроков",
+    description: "Сын Аида сбегает из ада снова и снова. Лучший рогалик с сильным сюжетом.",
+    cover: "from-orange-700/40 via-zinc-900 to-fuchsia-900/30",
+    accent: "orange",
+  },
 };
 
-type Tab = "feed" | "profile" | "search" | "notifications" | "messages" | "saved" | "trends" | "game";
+const ALL_GENRES = ["RPG", "Open World", "Action", "Инди", "Shooter", "Симулятор", "Стратегия"];
+const ALL_PLATFORMS = ["PC", "PS5", "Xbox", "Switch", "Mac", "Mobile"];
+
+type Tab = "feed" | "profile" | "search" | "notifications" | "messages" | "saved" | "trends" | "game" | "catalog";
 
 function InitialAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name.slice(0, 2).toUpperCase();
@@ -385,6 +450,36 @@ export default function Index() {
   const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [followedGames, setFollowedGames] = useState<Set<string>>(new Set());
+  const [catalogGenres, setCatalogGenres] = useState<Set<string>>(new Set());
+  const [catalogPlatforms, setCatalogPlatforms] = useState<Set<string>>(new Set());
+  const [catalogSort, setCatalogSort] = useState<"rating" | "year" | "players">("rating");
+  const [catalogSearch, setCatalogSearch] = useState("");
+
+  const toggleSetItem = (set: Set<string>, item: string, setter: (s: Set<string>) => void) => {
+    const next = new Set(set);
+    if (next.has(item)) next.delete(item); else next.add(item);
+    setter(next);
+  };
+
+  const resetFilters = () => {
+    setCatalogGenres(new Set());
+    setCatalogPlatforms(new Set());
+    setCatalogSearch("");
+  };
+
+  const filteredGames = Object.values(GAMES)
+    .filter((g) => {
+      if (catalogSearch && !g.title.toLowerCase().includes(catalogSearch.toLowerCase()) && !g.studio.toLowerCase().includes(catalogSearch.toLowerCase())) return false;
+      if (catalogGenres.size > 0 && !g.genres.some((gn) => catalogGenres.has(gn))) return false;
+      if (catalogPlatforms.size > 0 && !g.platforms.some((p) => catalogPlatforms.has(p))) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (catalogSort === "rating") return parseInt(b.rating) - parseInt(a.rating);
+      if (catalogSort === "year") return parseInt(b.year) - parseInt(a.year);
+      const num = (s: string) => parseFloat(s.replace(/[^\d.]/g, ""));
+      return num(b.players) - num(a.players);
+    });
 
   const openGame = (tag: string) => {
     if (GAMES[tag]) {
@@ -456,6 +551,7 @@ export default function Index() {
 
   const navItems: { id: Tab; icon: string; label: string; badge?: number }[] = [
     { id: "feed", icon: "Gamepad2", label: "Лента" },
+    { id: "catalog", icon: "LayoutGrid", label: "Каталог игр" },
     { id: "search", icon: "Search", label: "Поиск" },
     { id: "notifications", icon: "Bell", label: "Уведомления", badge: unreadCount },
     { id: "messages", icon: "Mail", label: "Сообщения" },
@@ -820,6 +916,176 @@ export default function Index() {
             </div>
           )}
 
+          {/* Каталог игр */}
+          {activeTab === "catalog" && (
+            <div>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 border-b border-white/5">
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div>
+                    <h1 className="font-semibold text-white">Каталог игр</h1>
+                    <p className="text-xs text-zinc-500 mt-0.5">{filteredGames.length} из {Object.keys(GAMES).length} игр</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={catalogSort}
+                      onChange={(e) => setCatalogSort(e.target.value as "rating" | "year" | "players")}
+                      className="bg-white/5 border border-white/10 rounded-lg text-sm text-zinc-300 px-3 py-1.5 focus:outline-none focus:border-violet-500/50 cursor-pointer"
+                    >
+                      <option value="rating">По рейтингу</option>
+                      <option value="year">По году</option>
+                      <option value="players">По игрокам</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Поиск */}
+                <div className="px-6 pb-3">
+                  <div className="relative">
+                    <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      value={catalogSearch}
+                      onChange={(e) => setCatalogSearch(e.target.value)}
+                      placeholder="Название игры или студия…"
+                      className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/8 rounded-lg text-sm focus:outline-none focus:border-violet-500/50 transition-colors text-zinc-100 placeholder:text-zinc-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Фильтры по жанрам */}
+                <div className="px-6 pb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mr-1">Жанры</span>
+                    {ALL_GENRES.map((g) => {
+                      const active = catalogGenres.has(g);
+                      return (
+                        <button
+                          key={g}
+                          onClick={() => toggleSetItem(catalogGenres, g, setCatalogGenres)}
+                          className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                            active
+                              ? "bg-violet-600 border-violet-500 text-white"
+                              : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Фильтры по платформам */}
+                <div className="px-6 pb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mr-1">Платформы</span>
+                    {ALL_PLATFORMS.map((p) => {
+                      const active = catalogPlatforms.has(p);
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => toggleSetItem(catalogPlatforms, p, setCatalogPlatforms)}
+                          className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                            active
+                              ? "bg-cyan-600 border-cyan-500 text-white"
+                              : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    {(catalogGenres.size > 0 || catalogPlatforms.size > 0 || catalogSearch) && (
+                      <button
+                        onClick={resetFilters}
+                        className="text-xs px-2.5 py-1 text-zinc-500 hover:text-rose-400 transition-colors ml-1"
+                      >
+                        × Сбросить
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Сетка игр */}
+              {filteredGames.length === 0 ? (
+                <div className="px-6 py-20 text-center">
+                  <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Icon name="SearchX" size={28} className="text-zinc-500" />
+                  </div>
+                  <h2 className="font-medium text-white mb-1">Ничего не найдено</h2>
+                  <p className="text-sm text-zinc-500 mb-4">Попробуйте изменить фильтры</p>
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-500 transition-colors"
+                  >
+                    Сбросить фильтры
+                  </button>
+                </div>
+              ) : (
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {filteredGames.map((g) => {
+                    const isFollowed = followedGames.has(g.title);
+                    const gamePostCount = posts.filter((p) => p.tag === g.title).length;
+                    return (
+                      <button
+                        key={g.title}
+                        onClick={() => openGame(g.title)}
+                        className="group text-left bg-white/[0.02] border border-white/8 rounded-2xl overflow-hidden hover:border-violet-500/40 hover:bg-white/[0.04] transition-all"
+                      >
+                        <div className={`h-32 bg-gradient-to-br ${g.cover} relative overflow-hidden`}>
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.06),transparent_50%)]" />
+                          <div className="absolute top-3 right-3 px-2 py-0.5 bg-black/40 backdrop-blur-sm rounded-md text-xs font-bold text-white border border-white/10">
+                            {g.rating}
+                          </div>
+                          {isFollowed && (
+                            <div className="absolute top-3 left-3 px-2 py-0.5 bg-violet-600/90 backdrop-blur-sm rounded-md text-[10px] font-medium text-white">
+                              Отслеживается
+                            </div>
+                          )}
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <h3 className="text-lg font-bold text-white tracking-tight truncate group-hover:text-violet-200 transition-colors">
+                              {g.title}
+                            </h3>
+                            <p className="text-xs text-zinc-300/80 truncate">{g.studio} · {g.year}</p>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {g.genres.slice(0, 3).map((gn) => (
+                              <span key={gn} className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                {gn}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-xs text-zinc-400 leading-relaxed mb-3 line-clamp-2">{g.description}</p>
+                          <div className="flex items-center justify-between text-xs text-zinc-500">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <Icon name="Users" size={11} />
+                                {g.players.split(" ")[0]}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Icon name="MessageCircle" size={11} />
+                                {gamePostCount}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              {g.platforms.slice(0, 3).map((p) => (
+                                <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/10">
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Страница игры */}
           {activeTab === "game" && selectedGame && GAMES[selectedGame] && (() => {
             const game = GAMES[selectedGame];
@@ -919,7 +1185,15 @@ export default function Index() {
         {/* Правая панель */}
         <aside className="w-72 flex-shrink-0 pl-6 pt-6 pr-4 hidden lg:block">
           <div className="mb-7">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">Игры в фокусе</h2>
+            <div className="flex items-center justify-between mb-2 px-1">
+              <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Игры в фокусе</h2>
+              <button
+                onClick={() => setActiveTab("catalog")}
+                className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Все →
+              </button>
+            </div>
             <div className="space-y-2">
               {Object.values(GAMES).slice(0, 3).map((g) => (
                 <button

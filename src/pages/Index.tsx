@@ -2,13 +2,13 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Textarea } from "@/components/ui/textarea";
 
-// --- Типы ---
 interface Post {
   id: number;
   author: string;
   handle: string;
   time: string;
   text: string;
+  tag?: string;
   likes: number;
   reposts: number;
   comments: number;
@@ -27,54 +27,43 @@ interface Notification {
   read: boolean;
 }
 
-// --- Данные ---
 const INITIAL_POSTS: Post[] = [
   {
     id: 1,
-    author: "Алиса Морозова",
-    handle: "alisa_m",
-    time: "2м",
-    text: "Минимализм — это не отсутствие вещей, а присутствие только нужного. Применяю этот принцип во всём: в дизайне, в коде, в жизни.",
-    likes: 142,
-    reposts: 34,
-    comments: 18,
+    author: "NightOwl_GG",
+    handle: "nightowl",
+    time: "3м",
+    tag: "Elden Ring",
+    text: "Наконец-то завалил Малении с первой попытки без флаконов. 47 часов на это ушло. Нет, я не плакал. Я просто немного всплакнул.",
+    likes: 1842,
+    reposts: 341,
+    comments: 218,
     liked: false,
     reposted: false,
     saved: false,
   },
   {
     id: 2,
-    author: "Денис Волков",
-    handle: "denis_v",
-    time: "15м",
-    text: "Только что вернулся с конференции по продуктовому дизайну. Главный вывод: пользователи не читают — они сканируют. Делайте интерфейсы для сканирования.",
-    likes: 89,
-    reposts: 47,
-    comments: 23,
+    author: "PixelViper",
+    handle: "pixelviper",
+    time: "18м",
+    tag: "Cyberpunk 2077",
+    text: "Cyberpunk 2.2 — это уже совсем другая игра. Помните, каким был релиз? Теперь это один из лучших open-world от первого лица. CDPR реабилитировались.",
+    likes: 3109,
+    reposts: 892,
+    comments: 445,
     liked: true,
     reposted: false,
     saved: true,
   },
   {
     id: 3,
-    author: "Мария Кузнецова",
-    handle: "maria_kuz",
-    time: "1ч",
-    text: "Сделала ретрост для команды из 20 человек. Три часа — и у нас есть чёткий план на квартал. Ещё раз убедилась: структура важнее интенсивности.",
-    likes: 203,
-    reposts: 61,
-    comments: 41,
-    liked: false,
-    reposted: false,
-    saved: false,
-  },
-  {
-    id: 4,
-    author: "Иван Петров",
-    handle: "ivan_p",
-    time: "3ч",
-    text: "Открытие дня: если просыпаться на час раньше и читать вместо соцсетей — через месяц прочитаешь 4 книги. Начал неделю назад.",
-    likes: 517,
+    author: "LootGoblin",
+    handle: "lootgoblin",
+    time: "45м",
+    tag: "Diablo IV",
+    text: "Blizzard анонсировали новый сезон в Diablo IV — Сезон Крови. Новый класс, 12 данжей, легендарные аффиксы переработаны. Дата выхода: 7 июня. Кто в деле?",
+    likes: 724,
     reposts: 198,
     comments: 87,
     liked: false,
@@ -82,64 +71,104 @@ const INITIAL_POSTS: Post[] = [
     saved: false,
   },
   {
+    id: 4,
+    author: "RetroFrame",
+    handle: "retroframe",
+    time: "2ч",
+    tag: "Инди",
+    text: "Hollow Knight: Silksong выйдет. Нет, правда. Я просто верю. Уже 6 лет верю. Это моя религия.",
+    likes: 9471,
+    reposts: 4122,
+    comments: 1089,
+    liked: false,
+    reposted: false,
+    saved: false,
+  },
+  {
     id: 5,
-    author: "Алиса Морозова",
-    handle: "alisa_m",
-    time: "5ч",
-    text: "Работаю над новым проектом. Пока не могу рассказать детали, но это будет что-то особенное в области типографики и пространства.",
-    likes: 78,
-    reposts: 12,
-    comments: 9,
+    author: "NightOwl_GG",
+    handle: "nightowl",
+    time: "4ч",
+    tag: "Baldur's Gate 3",
+    text: "Прошёл BG3 на четвёртый раз — теперь как Тёмный Дворянин. Игра совершенно другая. Larian сделали шедевр.",
+    likes: 2301,
+    reposts: 567,
+    comments: 234,
     liked: false,
     reposted: false,
     saved: false,
     repostOf: {
-      author: "Денис Волков",
-      handle: "denis_v",
-      text: "Типографика — это архитектура текста. Правильные отступы решают всё.",
+      author: "PixelViper",
+      handle: "pixelviper",
+      text: "BG3 — единственная игра, где я пожалел, что не изучил D&D раньше. 180 часов за один присест.",
     },
+  },
+  {
+    id: 6,
+    author: "SpeedrunQueen",
+    handle: "speedrunq",
+    time: "6ч",
+    tag: "Speedrun",
+    text: "Новый WR в Super Mario 64 — 1:35:42. Сообщество не спит уже третью ночь подряд. Это всё ради 4 секунд. Я понимаю каждого из них.",
+    likes: 5840,
+    reposts: 1293,
+    comments: 378,
+    liked: false,
+    reposted: false,
+    saved: false,
   },
 ];
 
 const NOTIFICATIONS: Notification[] = [
-  { id: 1, type: "like", user: "Денис Волков", text: "понравился ваш пост", time: "2м", read: false },
-  { id: 2, type: "follow", user: "Мария Кузнецова", text: "подписалась на вас", time: "10м", read: false },
-  { id: 3, type: "comment", user: "Иван Петров", text: "прокомментировал ваш пост", time: "25м", read: false },
-  { id: 4, type: "repost", user: "Алиса Морозова", text: "поделилась вашим постом", time: "1ч", read: true },
-  { id: 5, type: "like", user: "Денис Волков", text: "понравился ваш комментарий", time: "2ч", read: true },
-  { id: 6, type: "follow", user: "Новый пользователь", text: "подписался на вас", time: "5ч", read: true },
+  { id: 1, type: "like", user: "PixelViper", text: "оценил ваш пост про Elden Ring", time: "5м", read: false },
+  { id: 2, type: "follow", user: "SpeedrunQueen", text: "подписалась на вас", time: "12м", read: false },
+  { id: 3, type: "comment", user: "LootGoblin", text: "прокомментировал ваш пост", time: "30м", read: false },
+  { id: 4, type: "repost", user: "RetroFrame", text: "поделился вашим постом", time: "1ч", read: true },
+  { id: 5, type: "like", user: "NightOwl_GG", text: "оценил ваш комментарий", time: "3ч", read: true },
+  { id: 6, type: "follow", user: "GlitchHunter", text: "подписался на вас", time: "5ч", read: true },
 ];
 
 const TRENDS = [
-  { tag: "дизайн", posts: "12.4к постов" },
-  { tag: "продуктивность", posts: "8.9к постов" },
-  { tag: "типографика", posts: "5.2к постов" },
-  { tag: "минимализм", posts: "4.8к постов" },
-  { tag: "разработка", posts: "3.1к постов" },
+  { tag: "EldenRing", posts: "48.2к постов", hot: true },
+  { tag: "Silksong", posts: "31.7к постов", hot: true },
+  { tag: "DiabloIV", posts: "19.4к постов", hot: false },
+  { tag: "BaldursGate3", posts: "15.1к постов", hot: false },
+  { tag: "Speedrun", posts: "9.8к постов", hot: false },
+  { tag: "Инди", posts: "7.3к постов", hot: false },
 ];
 
 const SUGGESTIONS = [
-  { name: "Павел Орлов", handle: "pavel_o", bio: "Продуктовый дизайнер" },
-  { name: "Светлана Иванова", handle: "sveta_i", bio: "UX-исследователь" },
-  { name: "Кирилл Смирнов", handle: "kirill_s", bio: "Фронтенд-разработчик" },
+  { name: "GlitchHunter", handle: "glitchhunter", bio: "Нахожу баги. Это искусство." },
+  { name: "PixelViper", handle: "pixelviper", bio: "Обзоры · RPG · Lore" },
+  { name: "SpeedrunQueen", handle: "speedrunq", bio: "WR × 14 · Any% маньяк" },
 ];
 
 type Tab = "feed" | "profile" | "search" | "notifications" | "messages" | "saved" | "trends";
 
 function InitialAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
-  const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-  const colors = [
-    "bg-stone-200 text-stone-600",
-    "bg-slate-200 text-slate-600",
-    "bg-zinc-200 text-zinc-600",
-    "bg-neutral-200 text-neutral-600",
+  const initials = name.slice(0, 2).toUpperCase();
+  const palette = [
+    "bg-violet-900/60 text-violet-300",
+    "bg-cyan-900/60 text-cyan-300",
+    "bg-emerald-900/60 text-emerald-300",
+    "bg-rose-900/60 text-rose-300",
+    "bg-amber-900/60 text-amber-300",
+    "bg-indigo-900/60 text-indigo-300",
   ];
-  const color = colors[name.charCodeAt(0) % colors.length];
-  const sizeClass = size === "sm" ? "w-8 h-8 text-xs" : size === "lg" ? "w-14 h-14 text-lg" : "w-10 h-10 text-sm";
+  const color = palette[name.charCodeAt(0) % palette.length];
+  const sizeClass = size === "sm" ? "w-8 h-8 text-xs" : size === "lg" ? "w-14 h-14 text-base" : "w-10 h-10 text-sm";
   return (
-    <div className={`${sizeClass} ${color} rounded-full flex items-center justify-center font-medium flex-shrink-0`}>
+    <div className={`${sizeClass} ${color} rounded-xl flex items-center justify-center font-bold flex-shrink-0 border border-white/5`}>
       {initials}
     </div>
+  );
+}
+
+function TagBadge({ tag }: { tag: string }) {
+  return (
+    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 mb-2">
+      {tag}
+    </span>
   );
 }
 
@@ -158,9 +187,9 @@ function PostCard({
   const [repostComment, setRepostComment] = useState("");
 
   return (
-    <article className="border-b border-stone-100 px-6 py-5 hover:bg-stone-50/50 transition-colors duration-150">
+    <article className="border-b border-white/5 px-6 py-5 hover:bg-white/[0.02] transition-colors duration-150">
       {post.repostOf && (
-        <div className="flex items-center gap-1.5 text-xs text-stone-400 mb-3 ml-14">
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-3 ml-14">
           <Icon name="Repeat2" size={12} />
           <span>{post.author} поделился</span>
         </div>
@@ -169,59 +198,61 @@ function PostCard({
         <InitialAvatar name={post.author} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 mb-1.5">
-            <span className="font-semibold text-stone-900 text-sm">{post.author}</span>
-            <span className="text-stone-400 text-xs">@{post.handle}</span>
-            <span className="text-stone-300 text-xs ml-auto flex-shrink-0">{post.time}</span>
+            <span className="font-semibold text-white text-sm">{post.author}</span>
+            <span className="text-zinc-500 text-xs">@{post.handle}</span>
+            <span className="text-zinc-600 text-xs ml-auto flex-shrink-0">{post.time}</span>
           </div>
 
+          {post.tag && <TagBadge tag={post.tag} />}
+
           {post.repostOf && (
-            <div className="border border-stone-200 rounded-xl p-3 mb-3 bg-stone-50">
+            <div className="border border-white/8 rounded-xl p-3 mb-3 bg-white/[0.03]">
               <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="font-medium text-stone-700 text-xs">{post.repostOf.author}</span>
-                <span className="text-stone-400 text-xs">@{post.repostOf.handle}</span>
+                <span className="font-medium text-zinc-300 text-xs">{post.repostOf.author}</span>
+                <span className="text-zinc-500 text-xs">@{post.repostOf.handle}</span>
               </div>
-              <p className="text-stone-600 text-sm leading-relaxed">{post.repostOf.text}</p>
+              <p className="text-zinc-400 text-sm leading-relaxed">{post.repostOf.text}</p>
             </div>
           )}
 
-          <p className="text-stone-800 text-sm leading-relaxed mb-4">{post.text}</p>
+          <p className="text-zinc-200 text-sm leading-relaxed mb-4">{post.text}</p>
 
           <div className="flex items-center gap-5">
             <button
               onClick={() => onLike(post.id)}
               className={`flex items-center gap-1.5 text-xs transition-all duration-150 group ${
-                post.liked ? "text-rose-500" : "text-stone-400 hover:text-rose-400"
+                post.liked ? "text-rose-400" : "text-zinc-500 hover:text-rose-400"
               }`}
             >
               <Icon name="Heart" size={15} className={post.liked ? "fill-current" : "group-hover:scale-110 transition-transform"} />
-              <span>{post.likes + (post.liked ? 1 : 0)}</span>
+              <span>{(post.likes + (post.liked ? 1 : 0)).toLocaleString("ru")}</span>
             </button>
 
             <button
               onClick={() => setShowRepostModal(true)}
               className={`flex items-center gap-1.5 text-xs transition-colors duration-150 ${
-                post.reposted ? "text-emerald-500" : "text-stone-400 hover:text-emerald-400"
+                post.reposted ? "text-emerald-400" : "text-zinc-500 hover:text-emerald-400"
               }`}
             >
               <Icon name="Repeat2" size={15} />
-              <span>{post.reposts + (post.reposted ? 1 : 0)}</span>
+              <span>{(post.reposts + (post.reposted ? 1 : 0)).toLocaleString("ru")}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-sky-400 transition-colors duration-150">
+            <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-cyan-400 transition-colors duration-150">
               <Icon name="MessageCircle" size={15} />
-              <span>{post.comments}</span>
+              <span>{post.comments.toLocaleString("ru")}</span>
             </button>
 
             <button
               onClick={() => onSave(post.id)}
               className={`flex items-center gap-1.5 text-xs ml-auto transition-colors duration-150 ${
-                post.saved ? "text-amber-500" : "text-stone-400 hover:text-amber-400"
+                post.saved ? "text-amber-400" : "text-zinc-500 hover:text-amber-400"
               }`}
             >
               <Icon name="Bookmark" size={15} className={post.saved ? "fill-current" : ""} />
             </button>
 
-            <button className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors duration-150">
+            <button className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">
               <Icon name="Share" size={15} />
             </button>
           </div>
@@ -230,32 +261,32 @@ function PostCard({
 
       {showRepostModal && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setShowRepostModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+            className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-semibold text-stone-900 mb-4">Поделиться постом</h3>
-            <div className="border border-stone-100 rounded-xl p-4 mb-4 bg-stone-50">
+            <h3 className="font-semibold text-white mb-4">Поделиться постом</h3>
+            <div className="border border-white/8 rounded-xl p-4 mb-4 bg-white/[0.03]">
               <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="font-medium text-stone-700 text-xs">{post.author}</span>
-                <span className="text-stone-400 text-xs">@{post.handle}</span>
+                <span className="font-medium text-zinc-300 text-xs">{post.author}</span>
+                <span className="text-zinc-500 text-xs">@{post.handle}</span>
               </div>
-              <p className="text-stone-600 text-sm">{post.text.slice(0, 120)}{post.text.length > 120 ? "…" : ""}</p>
+              <p className="text-zinc-400 text-sm">{post.text.slice(0, 120)}{post.text.length > 120 ? "…" : ""}</p>
             </div>
             <Textarea
               value={repostComment}
               onChange={(e) => setRepostComment(e.target.value)}
               placeholder="Добавьте комментарий (необязательно)…"
-              className="resize-none border-stone-200 focus:border-stone-400 mb-4 text-sm"
+              className="resize-none bg-white/5 border-white/10 text-zinc-200 placeholder:text-zinc-600 focus:border-violet-500/50 mb-4 text-sm"
               rows={3}
             />
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowRepostModal(false)}
-                className="px-4 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"
+                className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
               >
                 Отмена
               </button>
@@ -265,7 +296,7 @@ function PostCard({
                   setShowRepostModal(false);
                   setRepostComment("");
                 }}
-                className="px-4 py-2 text-sm bg-stone-900 text-white rounded-lg hover:bg-stone-700 transition-colors"
+                className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition-colors"
               >
                 Поделиться
               </button>
@@ -338,7 +369,7 @@ export default function Index() {
   };
 
   const navItems: { id: Tab; icon: string; label: string; badge?: number }[] = [
-    { id: "feed", icon: "Home", label: "Лента" },
+    { id: "feed", icon: "Gamepad2", label: "Лента" },
     { id: "search", icon: "Search", label: "Поиск" },
     { id: "notifications", icon: "Bell", label: "Уведомления", badge: unreadCount },
     { id: "messages", icon: "Mail", label: "Сообщения" },
@@ -352,21 +383,21 @@ export default function Index() {
         (p) =>
           p.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.handle.toLowerCase().includes(searchQuery.toLowerCase())
+          (p.tag && p.tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : posts;
 
   const savedPosts = posts.filter((p) => p.saved);
 
   return (
-    <div className="min-h-screen bg-white font-golos">
+    <div className="min-h-screen bg-zinc-950 font-golos text-zinc-100">
       <div className="max-w-screen-xl mx-auto flex">
 
         {/* Левая навигация */}
-        <aside className="w-60 flex-shrink-0 sticky top-0 h-screen flex flex-col pt-6 px-4 border-r border-stone-100">
+        <aside className="w-60 flex-shrink-0 sticky top-0 h-screen flex flex-col pt-6 px-4 border-r border-white/5">
           <div className="px-3 mb-8">
-            <span className="text-xl font-bold tracking-tight text-stone-900">волна</span>
-            <span className="text-xl font-light text-stone-300">.</span>
+            <span className="text-xl font-bold tracking-tight text-white">pixel</span>
+            <span className="text-xl font-bold text-violet-400">talk</span>
           </div>
 
           <nav className="flex-1 space-y-0.5">
@@ -374,10 +405,10 @@ export default function Index() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   activeTab === item.id
-                    ? "bg-stone-900 text-white"
-                    : "text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+                    ? "bg-violet-600 text-white"
+                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
                 }`}
               >
                 <Icon name={item.icon} size={18} />
@@ -392,60 +423,60 @@ export default function Index() {
           </nav>
 
           <div className="pb-6 px-1">
-            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-stone-100 cursor-pointer transition-colors">
-              <InitialAvatar name="Вы" size="sm" />
+            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors">
+              <InitialAvatar name="ВЫ" size="sm" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-stone-900 truncate">Вы</div>
-                <div className="text-xs text-stone-400 truncate">@you</div>
+                <div className="text-sm font-medium text-white truncate">Вы</div>
+                <div className="text-xs text-zinc-500 truncate">@you</div>
               </div>
-              <Icon name="MoreHorizontal" size={16} className="text-stone-400" />
+              <Icon name="MoreHorizontal" size={16} className="text-zinc-500" />
             </div>
           </div>
         </aside>
 
         {/* Основной контент */}
-        <main className="flex-1 min-w-0 border-r border-stone-100">
+        <main className="flex-1 min-w-0 border-r border-white/5">
 
           {/* Лента */}
           {activeTab === "feed" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
-                <h1 className="font-semibold text-stone-900">Лента</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
+                <h1 className="font-semibold text-white">Лента</h1>
               </div>
 
-              <div className="px-6 py-5 border-b border-stone-100">
+              <div className="px-6 py-5 border-b border-white/5">
                 <div className="flex gap-4">
-                  <InitialAvatar name="Вы" />
+                  <InitialAvatar name="ВЫ" />
                   <div className="flex-1">
                     <Textarea
                       value={newPostText}
                       onChange={(e) => setNewPostText(e.target.value)}
-                      placeholder="Что происходит?"
-                      className="resize-none border-0 border-b border-stone-200 rounded-none focus:border-stone-400 focus-visible:ring-0 px-0 text-stone-900 placeholder:text-stone-300 text-sm mb-3 bg-transparent"
+                      placeholder="Что происходит в игровом мире?"
+                      className="resize-none border-0 border-b border-white/10 rounded-none focus:border-violet-500/50 focus-visible:ring-0 px-0 text-zinc-100 placeholder:text-zinc-600 text-sm mb-3 bg-transparent"
                       rows={3}
                     />
                     <div className="flex items-center justify-between">
                       <div className="flex gap-3">
-                        <button className="text-stone-400 hover:text-stone-600 transition-colors">
+                        <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
                           <Icon name="Image" size={18} />
                         </button>
-                        <button className="text-stone-400 hover:text-stone-600 transition-colors">
+                        <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
                           <Icon name="Hash" size={18} />
                         </button>
-                        <button className="text-stone-400 hover:text-stone-600 transition-colors">
+                        <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
                           <Icon name="Smile" size={18} />
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
                         {newPostText.length > 0 && (
-                          <span className={`text-xs ${newPostText.length > 240 ? "text-rose-400" : "text-stone-400"}`}>
+                          <span className={`text-xs ${newPostText.length > 240 ? "text-rose-400" : "text-zinc-500"}`}>
                             {280 - newPostText.length}
                           </span>
                         )}
                         <button
                           onClick={handlePublish}
                           disabled={!newPostText.trim() || newPostText.length > 280}
-                          className="px-4 py-1.5 bg-stone-900 text-white text-sm rounded-lg disabled:opacity-30 hover:bg-stone-700 transition-colors font-medium"
+                          className="px-4 py-1.5 bg-violet-600 text-white text-sm rounded-lg disabled:opacity-30 hover:bg-violet-500 transition-colors font-medium"
                         >
                           Опубликовать
                         </button>
@@ -464,14 +495,14 @@ export default function Index() {
           {/* Поиск */}
           {activeTab === "search" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
                 <div className="relative">
-                  <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Поиск по постам, пользователям, хэштегам…"
-                    className="w-full pl-9 pr-4 py-2.5 bg-stone-100 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-1 focus:ring-stone-300 transition-all text-stone-900 placeholder:text-stone-400"
+                    placeholder="Поиск по постам, играм, никам…"
+                    className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/8 rounded-xl text-sm focus:outline-none focus:border-violet-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
                     autoFocus
                   />
                 </div>
@@ -479,15 +510,15 @@ export default function Index() {
 
               {searchQuery ? (
                 <div>
-                  <div className="px-6 py-3 border-b border-stone-100">
-                    <span className="text-xs text-stone-400">
-                      Результаты по «{searchQuery}»: {filteredPosts.length}
+                  <div className="px-6 py-3 border-b border-white/5">
+                    <span className="text-xs text-zinc-500">
+                      По запросу «{searchQuery}»: {filteredPosts.length}
                     </span>
                   </div>
                   {filteredPosts.length === 0 ? (
                     <div className="px-6 py-16 text-center">
-                      <Icon name="SearchX" size={32} className="text-stone-200 mx-auto mb-3" />
-                      <p className="text-stone-400 text-sm">Ничего не найдено</p>
+                      <Icon name="SearchX" size={32} className="text-zinc-700 mx-auto mb-3" />
+                      <p className="text-zinc-500 text-sm">Ничего не найдено</p>
                     </div>
                   ) : (
                     filteredPosts.map((post) => (
@@ -497,17 +528,17 @@ export default function Index() {
                 </div>
               ) : (
                 <div>
-                  <div className="px-6 py-5 border-b border-stone-100">
-                    <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Кого читать</h2>
+                  <div className="px-6 py-5 border-b border-white/5">
+                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Кого читать</h2>
                     <div className="space-y-4">
                       {SUGGESTIONS.map((s) => (
                         <div key={s.handle} className="flex items-center gap-3">
                           <InitialAvatar name={s.name} size="sm" />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-stone-900">{s.name}</div>
-                            <div className="text-xs text-stone-400">@{s.handle} · {s.bio}</div>
+                            <div className="text-sm font-medium text-white">{s.name}</div>
+                            <div className="text-xs text-zinc-500">@{s.handle} · {s.bio}</div>
                           </div>
-                          <button className="px-3 py-1 border border-stone-200 rounded-lg text-xs text-stone-700 hover:bg-stone-50 transition-colors font-medium">
+                          <button className="px-3 py-1 border border-white/10 rounded-lg text-xs text-zinc-300 hover:bg-white/5 transition-colors font-medium">
                             Читать
                           </button>
                         </div>
@@ -515,13 +546,13 @@ export default function Index() {
                     </div>
                   </div>
                   <div className="px-6 py-5">
-                    <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">Популярные хэштеги</h2>
+                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Популярные теги</h2>
                     <div className="flex flex-wrap gap-2">
                       {TRENDS.map((t) => (
                         <button
                           key={t.tag}
                           onClick={() => setSearchQuery("#" + t.tag)}
-                          className="px-3 py-1.5 bg-stone-100 rounded-lg text-sm text-stone-700 hover:bg-stone-200 transition-colors"
+                          className="px-3 py-1.5 bg-white/5 border border-white/8 rounded-lg text-sm text-zinc-300 hover:bg-violet-600/20 hover:border-violet-500/30 hover:text-violet-300 transition-colors"
                         >
                           #{t.tag}
                         </button>
@@ -536,10 +567,10 @@ export default function Index() {
           {/* Уведомления */}
           {activeTab === "notifications" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-                <h1 className="font-semibold text-stone-900">Уведомления</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                <h1 className="font-semibold text-white">Уведомления</h1>
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
+                  <button onClick={markAllRead} className="text-xs text-zinc-500 hover:text-zinc-200 transition-colors">
                     Прочитать все
                   </button>
                 )}
@@ -547,15 +578,15 @@ export default function Index() {
               {notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex items-start gap-4 px-6 py-4 border-b border-stone-100 transition-colors ${
-                    !n.read ? "bg-stone-50/80" : "hover:bg-stone-50/30"
+                  className={`flex items-start gap-4 px-6 py-4 border-b border-white/5 transition-colors ${
+                    !n.read ? "bg-violet-500/5" : "hover:bg-white/[0.02]"
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    n.type === "like" ? "bg-rose-100 text-rose-500" :
-                    n.type === "comment" ? "bg-sky-100 text-sky-500" :
-                    n.type === "follow" ? "bg-emerald-100 text-emerald-500" :
-                    "bg-amber-100 text-amber-500"
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    n.type === "like" ? "bg-rose-500/15 text-rose-400" :
+                    n.type === "comment" ? "bg-cyan-500/15 text-cyan-400" :
+                    n.type === "follow" ? "bg-emerald-500/15 text-emerald-400" :
+                    "bg-amber-500/15 text-amber-400"
                   }`}>
                     <Icon
                       name={n.type === "like" ? "Heart" : n.type === "comment" ? "MessageCircle" : n.type === "follow" ? "UserPlus" : "Repeat2"}
@@ -563,14 +594,14 @@ export default function Index() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-stone-900">
-                      <span className="font-medium">{n.user}</span>{" "}
-                      <span className="text-stone-500">{n.text}</span>
+                    <p className="text-sm text-zinc-200">
+                      <span className="font-medium text-white">{n.user}</span>{" "}
+                      <span className="text-zinc-400">{n.text}</span>
                     </p>
-                    <span className="text-xs text-stone-400">{n.time}</span>
+                    <span className="text-xs text-zinc-600">{n.time}</span>
                   </div>
                   {!n.read && (
-                    <div className="w-2 h-2 bg-stone-900 rounded-full flex-shrink-0 mt-2" />
+                    <div className="w-2 h-2 bg-violet-400 rounded-full flex-shrink-0 mt-2" />
                   )}
                 </div>
               ))}
@@ -580,18 +611,18 @@ export default function Index() {
           {/* Сообщения */}
           {activeTab === "messages" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
-                <h1 className="font-semibold text-stone-900">Сообщения</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
+                <h1 className="font-semibold text-white">Сообщения</h1>
               </div>
               <div className="px-6 py-16 text-center">
-                <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Icon name="Mail" size={28} className="text-stone-400" />
+                <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Icon name="Mail" size={28} className="text-zinc-500" />
                 </div>
-                <h2 className="font-medium text-stone-900 mb-1">Прямые сообщения</h2>
-                <p className="text-sm text-stone-400 max-w-xs mx-auto mb-4">
-                  Переписывайтесь напрямую с любым пользователем
+                <h2 className="font-medium text-white mb-1">Прямые сообщения</h2>
+                <p className="text-sm text-zinc-500 max-w-xs mx-auto mb-4">
+                  Обсуждайте игры напрямую с другими геймерами
                 </p>
-                <button className="px-4 py-2 bg-stone-900 text-white text-sm rounded-lg hover:bg-stone-700 transition-colors">
+                <button className="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-500 transition-colors">
                   Написать сообщение
                 </button>
               </div>
@@ -601,16 +632,16 @@ export default function Index() {
           {/* Сохранённое */}
           {activeTab === "saved" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
-                <h1 className="font-semibold text-stone-900">Сохранённое</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
+                <h1 className="font-semibold text-white">Сохранённое</h1>
               </div>
               {savedPosts.length === 0 ? (
                 <div className="px-6 py-16 text-center">
-                  <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Icon name="Bookmark" size={28} className="text-stone-400" />
+                  <div className="w-16 h-16 bg-white/5 border border-white/8 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Icon name="Bookmark" size={28} className="text-zinc-500" />
                   </div>
-                  <h2 className="font-medium text-stone-900 mb-1">Пока ничего нет</h2>
-                  <p className="text-sm text-stone-400">Сохраняйте посты — они будут здесь</p>
+                  <h2 className="font-medium text-white mb-1">Пока ничего нет</h2>
+                  <p className="text-sm text-zinc-500">Сохраняйте интересные посты — они будут здесь</p>
                 </div>
               ) : (
                 savedPosts.map((post) => (
@@ -623,21 +654,28 @@ export default function Index() {
           {/* Тренды */}
           {activeTab === "trends" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
-                <h1 className="font-semibold text-stone-900">Популярные темы</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
+                <h1 className="font-semibold text-white">Популярные темы</h1>
               </div>
               {TRENDS.map((t, i) => (
                 <div
                   key={t.tag}
                   onClick={() => { setSearchQuery("#" + t.tag); setActiveTab("search"); }}
-                  className="flex items-center gap-4 px-6 py-4 border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors group"
+                  className="flex items-center gap-4 px-6 py-4 border-b border-white/5 hover:bg-white/[0.03] cursor-pointer transition-colors group"
                 >
-                  <span className="text-stone-200 font-bold text-xl w-8 text-right">{i + 1}</span>
+                  <span className="text-zinc-700 font-bold text-lg w-8 text-right">{i + 1}</span>
                   <div className="flex-1">
-                    <div className="font-semibold text-stone-900">#{t.tag}</div>
-                    <div className="text-xs text-stone-400">{t.posts}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white">#{t.tag}</span>
+                      {t.hot && (
+                        <span className="text-xs bg-rose-500/15 text-rose-400 border border-rose-500/20 rounded px-1.5 py-0.5">
+                          🔥 горячее
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-zinc-500 mt-0.5">{t.posts}</div>
                   </div>
-                  <Icon name="TrendingUp" size={16} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
+                  <Icon name="ChevronRight" size={16} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
                 </div>
               ))}
             </div>
@@ -646,46 +684,46 @@ export default function Index() {
           {/* Профиль */}
           {activeTab === "profile" && (
             <div>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 py-4 border-b border-stone-100">
-                <h1 className="font-semibold text-stone-900">Профиль</h1>
+              <div className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm z-10 px-6 py-4 border-b border-white/5">
+                <h1 className="font-semibold text-white">Профиль</h1>
               </div>
 
-              <div className="h-28 bg-gradient-to-br from-stone-100 via-stone-150 to-stone-200" />
+              <div className="h-28 bg-gradient-to-br from-violet-900/40 via-zinc-900 to-cyan-900/30" />
 
               <div className="px-6 pb-8">
                 <div className="flex items-end justify-between -mt-7 mb-4">
-                  <div className="w-16 h-16 bg-white rounded-full border-4 border-white shadow-sm flex items-center justify-center">
-                    <InitialAvatar name="Вы" size="lg" />
+                  <div className="w-16 h-16 bg-zinc-900 rounded-2xl border-2 border-zinc-900 shadow-lg flex items-center justify-center">
+                    <InitialAvatar name="ВЫ" size="lg" />
                   </div>
-                  <button className="px-4 py-1.5 border border-stone-200 rounded-lg text-sm text-stone-700 hover:bg-stone-50 transition-colors font-medium mt-2">
+                  <button className="px-4 py-1.5 border border-white/10 rounded-lg text-sm text-zinc-300 hover:bg-white/5 transition-colors font-medium mt-2">
                     Редактировать
                   </button>
                 </div>
 
                 <div className="mb-3">
-                  <h2 className="text-lg font-bold text-stone-900">Вы</h2>
-                  <p className="text-stone-400 text-sm">@you</p>
+                  <h2 className="text-lg font-bold text-white">Вы</h2>
+                  <p className="text-zinc-500 text-sm">@you</p>
                 </div>
 
-                <p className="text-sm text-stone-500 mb-5 leading-relaxed">
-                  Расскажите о себе — добавьте описание профиля.
+                <p className="text-sm text-zinc-500 mb-5 leading-relaxed">
+                  Расскажите о себе — любимые игры, жанры, платформы.
                 </p>
 
                 <div className="flex gap-6 mb-6">
                   <div>
-                    <span className="font-bold text-stone-900">0</span>
-                    <span className="text-stone-400 text-sm ml-1">подписок</span>
+                    <span className="font-bold text-white">0</span>
+                    <span className="text-zinc-500 text-sm ml-1">подписок</span>
                   </div>
                   <div>
-                    <span className="font-bold text-stone-900">0</span>
-                    <span className="text-stone-400 text-sm ml-1">подписчиков</span>
+                    <span className="font-bold text-white">0</span>
+                    <span className="text-zinc-500 text-sm ml-1">подписчиков</span>
                   </div>
                 </div>
 
-                <div className="border-t border-stone-100 pt-5">
-                  <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Ваши посты</h3>
+                <div className="border-t border-white/5 pt-5">
+                  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Ваши посты</h3>
                   {posts.filter((p) => p.handle === "you").length === 0 ? (
-                    <p className="text-sm text-stone-400">Вы ещё ничего не публиковали</p>
+                    <p className="text-sm text-zinc-600">Вы ещё ничего не публиковали</p>
                   ) : (
                     posts.filter((p) => p.handle === "you").map((post) => (
                       <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onSave={handleSave} />
@@ -700,18 +738,21 @@ export default function Index() {
         {/* Правая панель */}
         <aside className="w-72 flex-shrink-0 pl-6 pt-6 pr-4 hidden lg:block">
           <div className="mb-7">
-            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 px-1">В тренде</h2>
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">В тренде сейчас</h2>
             <div className="space-y-0.5">
               {TRENDS.slice(0, 4).map((t, i) => (
                 <button
                   key={t.tag}
                   onClick={() => { setSearchQuery("#" + t.tag); setActiveTab("search"); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-stone-100 text-left transition-colors group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-left transition-colors group"
                 >
-                  <span className="text-stone-300 text-xs font-medium w-4">{i + 1}</span>
+                  <span className="text-zinc-700 text-xs font-medium w-4">{i + 1}</span>
                   <div>
-                    <div className="text-sm font-medium text-stone-800 group-hover:text-stone-900">#{t.tag}</div>
-                    <div className="text-xs text-stone-400">{t.posts}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-zinc-200 group-hover:text-white">#{t.tag}</span>
+                      {t.hot && <span className="text-xs">🔥</span>}
+                    </div>
+                    <div className="text-xs text-zinc-600">{t.posts}</div>
                   </div>
                 </button>
               ))}
@@ -719,16 +760,16 @@ export default function Index() {
           </div>
 
           <div>
-            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 px-1">Кого читать</h2>
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">Кого читать</h2>
             <div className="space-y-0.5">
               {SUGGESTIONS.map((s) => (
-                <div key={s.handle} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-stone-100 transition-colors">
+                <div key={s.handle} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors">
                   <InitialAvatar name={s.name} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-stone-900 truncate">{s.name}</div>
-                    <div className="text-xs text-stone-400 truncate">{s.bio}</div>
+                    <div className="text-sm font-medium text-white truncate">{s.name}</div>
+                    <div className="text-xs text-zinc-500 truncate">{s.bio}</div>
                   </div>
-                  <button className="text-xs border border-stone-200 rounded-lg px-2.5 py-1 text-stone-700 hover:bg-stone-50 transition-colors whitespace-nowrap">
+                  <button className="text-xs border border-white/10 rounded-lg px-2.5 py-1 text-zinc-300 hover:bg-violet-600/20 hover:border-violet-500/30 hover:text-violet-300 transition-colors whitespace-nowrap">
                     Читать
                   </button>
                 </div>
